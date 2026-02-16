@@ -3,12 +3,13 @@ import { sanitizeRedirectTo } from '@/lib/auth/redirect';
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const redirectRaw = searchParams.redirectTo;
+  const resolvedSearchParams = await searchParams;
+  const redirectRaw = resolvedSearchParams.redirectTo;
   const redirectTo = sanitizeRedirectTo(redirectRaw);
 
   return <LoginClient redirectTo={redirectTo} />;

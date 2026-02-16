@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Subscription } from '@/types/subscription';
 import type { Database } from '@/types/supabase';
@@ -12,6 +13,7 @@ import {
 type SubscriptionRow = Database['public']['Tables']['subscriptions']['Row'];
 type SubscriptionInsert = Database['public']['Tables']['subscriptions']['Insert'];
 type SubscriptionUpdate = Database['public']['Tables']['subscriptions']['Update'];
+type SupabaseErrorLike = { code?: string; message?: string } | null;
 
 function mapRowToSubscription(row: SubscriptionRow): Subscription {
   return {
@@ -43,6 +45,24 @@ async function getCurrentUserId() {
   return { supabase, userId: user.id };
 }
 
+async function getCurrentUserIdOrRedirect(redirectTo: string) {
+  try {
+    return await getCurrentUserId();
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message === 'Unauthorized') {
+      redirect(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+    }
+    throw e;
+  }
+}
+
+function isMissingSubscriptionsTable(error: SupabaseErrorLike) {
+  return (
+    error?.code === 'PGRST205' &&
+    (error.message ?? '').includes("public.subscriptions")
+  );
+}
+
 export async function getSubscriptions(): Promise<Subscription[]> {
   try {
     const { supabase, userId } = await getCurrentUserId();
@@ -54,6 +74,12 @@ export async function getSubscriptions(): Promise<Subscription[]> {
       .order('next_payment_date', { ascending: true });
 
     if (error) {
+      if (isMissingSubscriptionsTable(error)) {
+        console.warn(
+          "Supabase table 'subscriptions' is missing. Run SQL setup script first.",
+        );
+        return [];
+      }
       console.error('getSubscriptions error', error);
       throw new Error('Не удалось загрузить подписки');
     }
@@ -71,7 +97,7 @@ export async function getSubscriptions(): Promise<Subscription[]> {
 }
 
 export async function addSubscription(formData: FormData) {
-  const { supabase, userId } = await getCurrentUserId();
+  const { supabase, userId } = await getCurrentUserIdOrRedirect('/subscriptions');
   const input = parseSubscriptionFormData(formData);
   validateSubscriptionInput(input);
 
@@ -90,6 +116,11 @@ export async function addSubscription(formData: FormData) {
   const { error } = await supabase.from('subscriptions').insert(payload);
 
   if (error) {
+    if (isMissingSubscriptionsTable(error)) {
+      throw new Error(
+        "Таблица subscriptions не создана в Supabase. Запусти SQL-скрипт и попробуй снова.",
+      );
+    }
     console.error('addSubscription error', error);
     throw new Error('Не удалось добавить подписку');
   }
@@ -100,7 +131,7 @@ export async function addSubscription(formData: FormData) {
 }
 
 export async function updateSubscription(id: string, formData: FormData) {
-  const { supabase, userId } = await getCurrentUserId();
+  const { supabase, userId } = await getCurrentUserIdOrRedirect('/subscriptions');
   const input = parseSubscriptionFormData(formData);
   validateSubscriptionInput(input);
 
@@ -122,6 +153,11 @@ export async function updateSubscription(id: string, formData: FormData) {
     .eq('user_id', userId);
 
   if (error) {
+    if (isMissingSubscriptionsTable(error)) {
+      throw new Error(
+        "Таблица subscriptions не создана в Supabase. Запусти SQL-скрипт и попробуй снова.",
+      );
+    }
     console.error('updateSubscription error', error);
     throw new Error('Не удалось обновить подписку');
   }
@@ -132,7 +168,7 @@ export async function updateSubscription(id: string, formData: FormData) {
 }
 
 export async function deleteSubscription(id: string) {
-  const { supabase, userId } = await getCurrentUserId();
+  const { supabase, userId } = await getCurrentUserIdOrRedirect('/subscriptions');
 
   const { error } = await supabase
     .from('subscriptions')
@@ -141,6 +177,11 @@ export async function deleteSubscription(id: string) {
     .eq('user_id', userId);
 
   if (error) {
+    if (isMissingSubscriptionsTable(error)) {
+      throw new Error(
+        "Таблица subscriptions не создана в Supabase. Запусти SQL-скрипт и попробуй снова.",
+      );
+    }
     console.error('deleteSubscription error', error);
     throw new Error('Не удалось удалить подписку');
   }
@@ -151,7 +192,7 @@ export async function deleteSubscription(id: string) {
 }
 
 export async function toggleUnused(id: string, isUnused: boolean) {
-  const { supabase, userId } = await getCurrentUserId();
+  const { supabase, userId } = await getCurrentUserIdOrRedirect('/subscriptions');
 
   const { error } = await supabase
     .from('subscriptions')
@@ -160,6 +201,11 @@ export async function toggleUnused(id: string, isUnused: boolean) {
     .eq('user_id', userId);
 
   if (error) {
+    if (isMissingSubscriptionsTable(error)) {
+      throw new Error(
+        "Таблица subscriptions не создана в Supabase. Запусти SQL-скрипт и попробуй снова.",
+      );
+    }
     console.error('toggleUnused error', error);
     throw new Error('Не удалось обновить флаг использования');
   }

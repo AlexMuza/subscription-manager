@@ -29,6 +29,13 @@ export function SubscriptionsClient({
     });
   }, [initialSubscriptions, search, category]);
 
+  const handleDeleteConfirm = (name: string) => (event: React.FormEvent<HTMLFormElement>) => {
+    const ok = window.confirm(`Удалить подписку "${name}"?`);
+    if (!ok) {
+      event.preventDefault();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -103,7 +110,10 @@ export function SubscriptionsClient({
                     {sub.isUnused ? 'Снять метку' : 'Не используется'}
                   </button>
                 </form>
-                <form action={deleteAction.bind(null, sub.id)}>
+                <form
+                  action={deleteAction.bind(null, sub.id)}
+                  onSubmit={handleDeleteConfirm(sub.name)}
+                >
                   <button
                     type="submit"
                     className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"

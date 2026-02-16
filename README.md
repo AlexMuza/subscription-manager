@@ -1,3 +1,5 @@
+# Subscription Manager
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
@@ -19,6 +21,35 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Supabase setup
+
+1. Create a Supabase project.
+2. Add env vars to `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_publishable_key
+```
+
+1. Open Supabase SQL Editor and run `supabase/init.sql` to bootstrap the DB once.
+2. Further schema changes should go through migrations in `supabase/migrations/`.
+
+## Migrations workflow
+
+- Create migration: `npm run db:migration:new -- add_feature_name`
+- Edit generated SQL in `supabase/migrations/*`
+- Apply to linked project: `npm run db:push`
+
+### CI deployment for migrations
+
+`/.github/workflows/supabase-migrations.yml` pushes new migrations from `master` when files under `supabase/migrations/**` change.
+
+Set repository secrets before enabling it:
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_PROJECT_REF`
+- `SUPABASE_DB_PASSWORD`
 
 ## Learn More
 

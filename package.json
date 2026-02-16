@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "db:migration:new": "npx supabase migration new",
+    "db:push": "npx supabase db push"
   },
   "dependencies": {
     "@supabase/auth-helpers-react": "^0.15.0",

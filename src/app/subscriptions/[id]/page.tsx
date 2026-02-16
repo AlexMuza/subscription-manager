@@ -5,6 +5,8 @@ import type { Database } from '@/types/supabase';
 import { SubscriptionForm } from '../SubscriptionForm';
 import { filterOwnedSubscription } from '@/lib/subscriptions/ownership';
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: { id: string };
 }

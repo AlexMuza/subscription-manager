@@ -2,6 +2,8 @@ import { getSubscriptions, deleteSubscription, toggleUnused } from '@/app/action
 import { SubscriptionsClient } from './SubscriptionsClient';
 import { SubscriptionForm } from './SubscriptionForm';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SubscriptionsPage() {
   const subscriptions = await getSubscriptions();
 

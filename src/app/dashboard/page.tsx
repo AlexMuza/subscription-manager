@@ -2,6 +2,8 @@ import { getSubscriptions } from '@/app/actions/subscriptions';
 import { StatsCards } from '@/components/StatsCards';
 import { UpcomingPayments } from '@/components/UpcomingPayments';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const subscriptions = await getSubscriptions();
 

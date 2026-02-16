@@ -2,6 +2,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { AuthGuard } from '@/components/AuthGuard';
 import { LogoutButton } from './logout-button';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProfilePage() {
   const supabase = await createSupabaseServerClient();
   const {

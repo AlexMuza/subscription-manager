@@ -51,6 +51,13 @@ Set repository secrets before enabling it:
 - `SUPABASE_PROJECT_REF`
 - `SUPABASE_DB_PASSWORD`
 
+## How to contribute
+
+1. Create a feature branch from `master`.
+2. Run checks locally: `npm run lint`, `npm test`, `npm run build`.
+3. If you change database schema, add a migration under `supabase/migrations/`.
+4. Open a pull request with a short summary and a test plan.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

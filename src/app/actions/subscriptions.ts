@@ -3,8 +3,17 @@
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Subscription } from '@/types/subscription';
+import type { Database } from '@/types/supabase';
+import {
+  parseSubscriptionFormData,
+  validateSubscriptionInput,
+} from '@/lib/subscriptions/validation';
 
-function mapRowToSubscription(row: any): Subscription {
+type SubscriptionRow = Database['public']['Tables']['subscriptions']['Row'];
+type SubscriptionInsert = Database['public']['Tables']['subscriptions']['Insert'];
+type SubscriptionUpdate = Database['public']['Tables']['subscriptions']['Update'];
+
+function mapRowToSubscription(row: SubscriptionRow): Subscription {
   return {
     id: row.id,
     userId: row.user_id,
@@ -49,9 +58,10 @@ export async function getSubscriptions(): Promise<Subscription[]> {
       throw new Error('Не удалось загрузить подписки');
     }
 
-    return (data ?? []).map(mapRowToSubscription);
-  } catch (e: any) {
-    if (e?.message === 'Unauthorized') {
+    const rows = (data ?? []) as SubscriptionRow[];
+    return rows.map(mapRowToSubscription);
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message === 'Unauthorized') {
       // Для неавторизованных пользователей просто возвращаем пустой список,
       // чтобы дашборд/страница подписок не падали в dev-режиме.
       return [];
@@ -62,31 +72,22 @@ export async function getSubscriptions(): Promise<Subscription[]> {
 
 export async function addSubscription(formData: FormData) {
   const { supabase, userId } = await getCurrentUserId();
+  const input = parseSubscriptionFormData(formData);
+  validateSubscriptionInput(input);
 
-  const name = String(formData.get('name') ?? '').trim();
-  const price = Number(formData.get('price') ?? 0);
-  const currency = String(formData.get('currency') ?? 'RUB');
-  const billingCycle = String(formData.get('billingCycle') ?? 'month');
-  const nextPaymentDate = String(formData.get('nextPaymentDate') ?? '');
-  const category = String(formData.get('category') ?? 'Другое');
-  const status = String(formData.get('status') ?? 'active');
-  const isUnused = formData.get('isUnused') === 'on';
-
-  if (!name || !price || !nextPaymentDate) {
-    throw new Error('Заполните все обязательные поля');
-  }
-
-  const { error } = await supabase.from('subscriptions').insert({
+  const payload: SubscriptionInsert = {
     user_id: userId,
-    name,
-    price,
-    currency,
-    billing_cycle: billingCycle,
-    next_payment_date: nextPaymentDate,
-    category,
-    status,
-    is_unused: isUnused,
-  });
+    name: input.name,
+    price: input.price,
+    currency: input.currency,
+    billing_cycle: input.billingCycle,
+    next_payment_date: input.nextPaymentDate,
+    category: input.category,
+    status: input.status,
+    is_unused: input.isUnused,
+  };
+
+  const { error } = await supabase.from('subscriptions').insert(payload);
 
   if (error) {
     console.error('addSubscription error', error);
@@ -100,32 +101,23 @@ export async function addSubscription(formData: FormData) {
 
 export async function updateSubscription(id: string, formData: FormData) {
   const { supabase, userId } = await getCurrentUserId();
+  const input = parseSubscriptionFormData(formData);
+  validateSubscriptionInput(input);
 
-  const name = String(formData.get('name') ?? '').trim();
-  const price = Number(formData.get('price') ?? 0);
-  const currency = String(formData.get('currency') ?? 'RUB');
-  const billingCycle = String(formData.get('billingCycle') ?? 'month');
-  const nextPaymentDate = String(formData.get('nextPaymentDate') ?? '');
-  const category = String(formData.get('category') ?? 'Другое');
-  const status = String(formData.get('status') ?? 'active');
-  const isUnused = formData.get('isUnused') === 'on';
-
-  if (!name || !price || !nextPaymentDate) {
-    throw new Error('Заполните все обязательные поля');
-  }
+  const payload: SubscriptionUpdate = {
+    name: input.name,
+    price: input.price,
+    currency: input.currency,
+    billing_cycle: input.billingCycle,
+    next_payment_date: input.nextPaymentDate,
+    category: input.category,
+    status: input.status,
+    is_unused: input.isUnused,
+  };
 
   const { error } = await supabase
     .from('subscriptions')
-    .update({
-      name,
-      price,
-      currency,
-      billing_cycle: billingCycle,
-      next_payment_date: nextPaymentDate,
-      category,
-      status,
-      is_unused: isUnused,
-    })
+    .update(payload)
     .eq('id', id)
     .eq('user_id', userId);
 

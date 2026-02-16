@@ -65,8 +65,8 @@ export function LoginClient({ redirectTo }: LoginClientProps) {
 
       router.push(redirectTo || '/dashboard');
       router.refresh();
-    } catch (err: any) {
-      setError(err.message ?? 'Произошла ошибка');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Произошла ошибка');
     } finally {
       setLoading(false);
     }

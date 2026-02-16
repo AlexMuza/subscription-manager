@@ -10,7 +10,7 @@ export async function createSupabaseServerClient() {
     throw new Error('Supabase env vars are not set');
   }
 
-  const cookieStore = (await (cookies() as any)) as any;
+  const cookieStore = await cookies();
 
   return createServerClient<Database>(url, anonKey, {
     cookies: {
@@ -24,7 +24,7 @@ export async function createSupabaseServerClient() {
         // no-op
       },
     },
-  } as any);
+  });
 }
 
 

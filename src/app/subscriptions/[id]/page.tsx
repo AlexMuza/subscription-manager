@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Subscription } from '@/types/subscription';
+import type { Database } from '@/types/supabase';
 import { SubscriptionForm } from '../SubscriptionForm';
+import { filterOwnedSubscription } from '@/lib/subscriptions/ownership';
 
 interface PageProps {
   params: { id: string };
@@ -9,29 +11,35 @@ interface PageProps {
 
 export default async function SubscriptionEditPage({ params }: PageProps) {
   const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('id', params.id)
-    .single();
+  if (!user) {
+    notFound();
+  }
+
+  const query = supabase.from('subscriptions').select('*');
+  const { data, error } = await filterOwnedSubscription(query, params.id, user.id).single();
 
   if (error || !data) {
     notFound();
   }
 
+  const row = data as Database['public']['Tables']['subscriptions']['Row'];
+
   const sub: Subscription = {
-    id: data.id,
-    userId: data.user_id,
-    name: data.name,
-    price: Number(data.price),
-    currency: data.currency,
-    billingCycle: data.billing_cycle,
-    nextPaymentDate: data.next_payment_date,
-    category: data.category,
-    status: data.status,
-    isUnused: data.is_unused,
-    createdAt: data.created_at,
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    price: Number(row.price),
+    currency: row.currency,
+    billingCycle: row.billing_cycle,
+    nextPaymentDate: row.next_payment_date,
+    category: row.category,
+    status: row.status,
+    isUnused: row.is_unused,
+    createdAt: row.created_at,
   };
 
   return (

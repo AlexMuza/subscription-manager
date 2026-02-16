@@ -1,4 +1,5 @@
 import { LoginClient } from './LoginClient';
+import { sanitizeRedirectTo } from '@/lib/auth/redirect';
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -8,10 +9,7 @@ export default function LoginPage({
   searchParams: SearchParams;
 }) {
   const redirectRaw = searchParams.redirectTo;
-  const redirectTo =
-    typeof redirectRaw === 'string' && redirectRaw.length > 0
-      ? redirectRaw
-      : '/dashboard';
+  const redirectTo = sanitizeRedirectTo(redirectRaw);
 
   return <LoginClient redirectTo={redirectTo} />;
 }

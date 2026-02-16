@@ -1,46 +1,38 @@
 import type { Subscription } from '@/types/subscription';
+import { calculateStats } from '@/lib/subscriptions/stats';
 
 interface StatsCardsProps {
   subscriptions: Subscription[];
 }
 
 export function StatsCards({ subscriptions }: StatsCardsProps) {
-  const active = subscriptions.filter((s) => s.status === 'active');
-
-  let monthlyTotal = 0;
-  let yearlyTotal = 0;
-  let mostExpensiveName: string | null = null;
-  let mostExpensiveMonthly: number | null = null;
-
-  for (const sub of active) {
-    const monthly =
-      sub.billingCycle === 'month' ? sub.price : sub.price / 12;
-    const yearly =
-      sub.billingCycle === 'month' ? sub.price * 12 : sub.price;
-
-    monthlyTotal += monthly;
-    yearlyTotal += yearly;
-
-    if (mostExpensiveMonthly === null || monthly > mostExpensiveMonthly) {
-      mostExpensiveMonthly = monthly;
-      mostExpensiveName = sub.name;
-    }
-  }
+  const {
+    activeCount,
+    monthlyTotal,
+    yearlyTotal,
+    totalsCurrency,
+    mostExpensiveName,
+    mostExpensiveMonthly,
+  } = calculateStats(subscriptions);
 
   const cards = [
     {
       label: 'Расходы в месяц',
-      value: `${monthlyTotal.toFixed(2)}`,
-      description: 'Суммарная месячная стоимость активных подписок',
+      value: totalsCurrency ? `${monthlyTotal.toFixed(2)} ${totalsCurrency}` : 'Н/Д',
+      description: totalsCurrency
+        ? 'Суммарная месячная стоимость активных подписок'
+        : 'Есть подписки в разных валютах, итоговая сумма не считается',
     },
     {
       label: 'Расходы в год',
-      value: `${yearlyTotal.toFixed(2)}`,
-      description: 'Суммарная годовая стоимость активных подписок',
+      value: totalsCurrency ? `${yearlyTotal.toFixed(2)} ${totalsCurrency}` : 'Н/Д',
+      description: totalsCurrency
+        ? 'Суммарная годовая стоимость активных подписок'
+        : 'Есть подписки в разных валютах, итоговая сумма не считается',
     },
     {
       label: 'Активные подписки',
-      value: active.length.toString(),
+      value: activeCount.toString(),
       description: 'Количество подписок со статусом «active»',
     },
     {
